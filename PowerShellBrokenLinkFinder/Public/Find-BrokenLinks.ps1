@@ -1,7 +1,7 @@
 function Find-BrokenLinks([string]$Url, [bool]$First = $false)
 {
     if ($First) { 
-        $All_Internal_Links += $Url
+        $Global:All_Internal_Links += $Url
         Write-Host -ForegroundColor Green "START"
     }
 
@@ -39,31 +39,27 @@ function Find-BrokenLinks([string]$Url, [bool]$First = $false)
 
         $External_Links | ForEach-Object {
 
+            $U = $_
+
             # check only once
-            if (-not ($All_External_Links.Contains($_))) 
-            {
-                $All_External_Links += $_
+            if ($U -in $Global:All_External_Links) { return }
 
-                # check external link
+            $Global:All_External_Links += $U
 
-                $Result = Check-Uri -Uri $_
-
-                if ($Result -eq 200) {
-                    
-                    # New-Object psobject -Property @{
-                    #     Base = $Url
-                    #     Uri = $_
-                    #     Status = "OK"
-                    # }
-                }
-                else {
-
-                    New-Object psobject -Property @{
-                        Base = $Url
-                        Uri = $_
-                        Status = "Error"
-                    }
-                    
+            $Result = Check-Uri -Uri $U
+            if ($Result -eq 200) {
+                
+                # New-Object psobject -Property @{
+                #     Base = $Url
+                #     Uri = $_
+                #     Status = "OK"
+                # }
+            }
+            else {
+                New-Object psobject -Property @{
+                    Base = $Url
+                    Uri = $U
+                    Status = "Error"
                 }
             }
         }
@@ -81,13 +77,14 @@ function Find-BrokenLinks([string]$Url, [bool]$First = $false)
         Write-Host -ForegroundColor Green "Internal links..."
 
         $Internal_Links | ForEach-Object {
+            
+            $U = $_
 
             # check only once
-            if (-not ($All_Internal_Links.Contains($_)))
-            {
-                $All_Internal_Links += $_
-                Find-BrokenLinks -Url $_
-            }
+            if ($U -in $Global:All_Internal_Links) { return }   
+
+            $Global:All_Internal_Links += $U
+            Find-BrokenLinks -Url $U
         }
     }
     else {
@@ -99,7 +96,7 @@ function Find-BrokenLinks([string]$Url, [bool]$First = $false)
 . .\PowerShellBrokenLinkFinder\Private\Check-Uri.ps1
 
 Clear-Host
-$All_External_Links = @()
-$All_Internal_Links = @()
+$Global:All_External_Links = @()
+$Global:All_Internal_Links = @()
 
-Find-BrokenLinks -Url https://sonneberg.de -First $true
+#Find-BrokenLinks -Url "https://sonneberg.de" -First $true
